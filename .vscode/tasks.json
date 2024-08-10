@@ -1,0 +1,88 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "basic_check",
+      "type": "process",
+      "command": "${workspaceFolder}/.venv/bin/python",
+      "windows": {
+        "command": "${workspaceFolder}\\.venv\\Scripts\\python.exe"
+      },
+      "args": [
+        "-m",
+        "tfreezer",
+        "--variant",
+        "debug",
+        "--workpath",
+        "${workspaceFolder}/build/basic_check",
+        "--entry-module",
+        "${workspaceFolder}/examples/basic_check/basic_check.py"
+      ],
+      "group": {
+        "kind": "build"
+      }
+    },
+    {
+      "label": "pyqt5_demo",
+      "type": "process",
+      "command": "${workspaceFolder}/.venv/bin/python",
+      "windows": {
+        "command": "${workspaceFolder}\\.venv\\Scripts\\python.exe"
+      },
+      "args": [
+        "-m",
+        "tfreezer",
+        "--variant",
+        "debug",
+        "--workpath",
+        "${workspaceFolder}/build/pyqt5_demo",
+        "${workspaceFolder}/examples/pyqt5_demo/deploy_spec.py"
+      ],
+      "group": {
+        "kind": "build"
+      }
+    },
+    {
+      "label": "requests_demo",
+      "type": "process",
+      "command": "${workspaceFolder}/.venv/bin/python",
+      "windows": {
+        "command": "${workspaceFolder}\\.venv\\Scripts\\python.exe"
+      },
+      "args": [
+        "-m",
+        "tfreezer",
+        "--variant",
+        "debug",
+        "--workpath",
+        "${workspaceFolder}/build/requests_demo",
+        "--entry-module",
+        "${workspaceFolder}/examples/requests_demo/requests_demo.py"
+      ],
+      "group": {
+        "kind": "build"
+      }
+    },
+    {
+      "label": "pywin32_demo",
+      "type": "process",
+      "command": "${workspaceFolder}/.venv/bin/python",
+      "windows": {
+        "command": "${workspaceFolder}\\.venv\\Scripts\\python.exe"
+      },
+      "args": [
+        "-m",
+        "tfreezer",
+        "--variant",
+        "debug",
+        "--workpath",
+        "${workspaceFolder}/build/pywin32_demo",
+        "--entry-module",
+        "${workspaceFolder}/examples/pywin32_demo/pywin32_demo.py"
+      ],
+      "group": {
+        "kind": "build"
+      }
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+build/
+dist/
+_build/
+_generate/
+*.so
+*.py[cod]
+*.egg-info
+*env*
+
+# clangd cache files
+.cache/
+
+# ide files
+.vs/
+.idea/
+
+# log files
+*.log
+
+# vim files
+*.swp
+*.swo
+
+# pycache files
+__pycache__/
+*.pyc
+
+# Misc
+.DS_Store
+
+src/tfreezer/cppsrc/frozen_modules/

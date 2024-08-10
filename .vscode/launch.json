@@ -1,0 +1,98 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Freeze basic_check",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "tfreezer",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "args": [
+        "--variant",
+        "debug",
+        "--workpath",
+        "${workspaceFolder}/build/basic_check",
+        "--entry-module",
+        "${workspaceFolder}/examples/basic_check/basic_check.py"
+      ],
+      "env": {
+        "DEBUG": "1"
+      }
+    },
+    {
+      "name": "Freeze pyqt5_demo",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "tfreezer",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "args": [
+        "--variant",
+        "debug",
+        "--workpath",
+        "${workspaceFolder}/build/pyqt5_demo",
+        "${workspaceFolder}/examples/pyqt5_demo/deploy_spec.py"
+      ],
+      "env": {
+        "DEBUG": "1"
+      }
+    },
+    {
+      "name": "Freeze requests_demo",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "tfreezer",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "args": [
+        "--variant",
+        "debug",
+        "--workpath",
+        "${workspaceFolder}/build/requests_demo",
+        "--entry-module",
+        "${workspaceFolder}/examples/requests_demo/requests_demo.py"
+      ],
+      "env": {
+        "DEBUG": "1"
+      }
+    },
+    {
+      "name": "Freeze pywin32_demo",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "tfreezer",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "args": [
+        "--variant",
+        "debug",
+        "--workpath",
+        "${workspaceFolder}/build/pywin32_demo",
+        "--entry-module",
+        "${workspaceFolder}/examples/pywin32_demo/pywin32_demo.py"
+      ],
+      "env": {
+        "DEBUG": "1"
+      }
+    },
+    {
+      "type": "debugpy",
+      "request": "attach",
+      "name": "Attach to Python",
+      "connect": {
+        "host": "localhost",
+        "port": 36938
+      },
+      "justMyCode": false
+    },
+    {
+      "name": "debug current py file",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${file}",
+      "justMyCode": false,
+      "console": "integratedTerminal"
+    }
+  ]
+}
