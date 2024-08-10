@@ -10,9 +10,11 @@ import sys
 import os
 import re
 import types
+import typing as _t
 import dataclasses
 import site
 import shutil
+import modulefinder
 import itertools
 import importlib
 from importlib import machinery
@@ -116,6 +118,20 @@ def import_pyi_qt_hooks(fullname: str) -> PyiQtHookModule:
     hooks_dir = os.path.dirname(hooks.__file__)
     module_path = os.path.join(hooks_dir, f"hook-{fullname}.py")
     real_fullname = f"PyInstaller.hooks.{fullname}"
+    return utils.load_signle_module(real_fullname, module_path)
+
+
+def import_tfreezer_hook(fullname: str) -> PyiQtHookModule:
+    """
+    import tfreezer hooks
+    Args:
+        name: fullname of the module
+    Returns:
+        PyiQtHookModule
+    """
+    tfreezer_dir = os.path.dirname(__file__)
+    module_path = os.path.join(tfreezer_dir, "hooks", f"hook-{fullname}.py")
+    real_fullname = f"tfreezer.hooks.{fullname}"
     return utils.load_signle_module(real_fullname, module_path)
 
 
@@ -395,6 +411,37 @@ def process_qt_files(assemble_info: AssembleInfo) -> list[tuple[str, str]]:
     return result_binaries
 
 
+def process_hook_modules(
+    modules: dict[str, modulefinder.Module], pyi_binaries: list[tuple[str, str, str]], pyi_datas: list[tuple[str, str, str]]
+) -> None:
+    """
+    Process modules to add extra binaries or datas
+    """
+    processed: set[str] = set()
+
+    def process_impl(fullnames: _t.Iterable[str]) -> None:
+        todo: list[str] = []
+        for module_name in fullnames:
+            if module_name in processed:
+                continue
+            try:
+                hook = import_tfreezer_hook(module_name)
+            except FileNotFoundError:
+                processed.add(module_name)
+                continue
+            for hiddenimport in hook.hiddenimports:
+                if hiddenimport in processed:
+                    continue
+                todo.append(hiddenimport)
+            pyi_binaries.extend(hook.binaries)
+            pyi_datas.extend(hook.datas)
+            processed.add(module_name)
+        if todo:
+            process_impl(todo)
+
+    process_impl(modules.keys())
+
+
 def assemble_application(assemble_info: AssembleInfo) -> None:
     """
     Assemble application
@@ -433,13 +480,7 @@ def assemble_application(assemble_info: AssembleInfo) -> None:
     # Process extension binaries
     platform_dynload_dir = get_platform_dynload_dir()
     extension_modules = []
-    pyi_datas = []
     for module_name, module in modules.items():
-        if module_name == "requests.api":
-            cacert_path = os.path.join(os.path.dirname(module.__file__), "..", "certifi", "cacert.pem")
-            if not os.path.isfile(cacert_path):
-                raise FileNotFoundError(f"{cacert_path} not found.")
-            pyi_datas.append(normalize_pyi_toc(cacert_path, "DATA", 2))
         if not module.__file__.endswith(tuple(machinery.EXTENSION_SUFFIXES)):
             continue
         if module.__file__.startswith(platform_dynload_dir):
@@ -452,6 +493,10 @@ def assemble_application(assemble_info: AssembleInfo) -> None:
             level += 1
         extension_modules.append(module_name)
         pyi_binaries.append(normalize_pyi_toc(module.__file__, "BINARY", level))
+
+    # Process hooks
+    pyi_datas = []
+    process_hook_modules(modules, pyi_binaries, pyi_datas)
 
     # Get all dependencies of the binaries using PyInstaller's API
     import_packages = sorted(extension_modules)

@@ -1,12 +1,8 @@
-# -*- coding: utf-8 -*-
-# author: Tac
-# contact: cookiezhx@163.com
-
 import requests
 
 
 def main():
-    r = requests.get("https://api.github.com/user", auth=("user", "pass"))
+    r = requests.get("https://api.github.com/user", auth=("user", "pass"), timeout=10)
     print(r.status_code)
     print(r.headers["content-type"])
     print(r.encoding)
