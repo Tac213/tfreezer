@@ -310,10 +310,15 @@ def process_qt_files(assemble_info: AssembleInfo) -> list[tuple[str, str]]:
         for module_name in module_names:
             if module_name in imported_module_names:
                 continue
-            hook = import_pyi_qt_hooks(module_name)
-            todo.extend(hook.hiddenimports)
-            binaries.update(hook.binaries)
-            datas.update(hook.datas)
+            try:
+                hook = import_pyi_qt_hooks(module_name)
+            except FileNotFoundError:
+                # No such hook
+                pass
+            else:
+                todo.extend(hook.hiddenimports)
+                binaries.update(hook.binaries)
+                datas.update(hook.datas)
             imported_module_names.add(module_name)
 
             module = importlib.import_module(module_name)
