@@ -13,8 +13,7 @@
         "debug",
         "--workpath",
         "${workspaceFolder}/build/basic_check",
-        "--entry-module",
-        "${workspaceFolder}/examples/basic_check/basic_check.py"
+        "${workspaceFolder}/examples/basic_check/freeze_config.py"
       ],
       "env": {
         "DEBUG": "1"

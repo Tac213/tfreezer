@@ -3,7 +3,7 @@ from importlib import resources
 
 if __name__ == "__main__":
     print(sys.path)
-    print(sys._stdlib_dir)
+    print(sys._stdlib_dir)  # pylint: disable=protected-access
     print(sys.argv)
     print(sys.meta_path)
     print(sys.path_hooks)

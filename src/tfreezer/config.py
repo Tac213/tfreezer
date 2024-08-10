@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # author: Tac
-# contact: gzzhanghuaxiong@163.com
+# contact: cookiezhx@163.com
 
 import typing as _t
 import dataclasses
@@ -8,6 +8,12 @@ import sys
 import os
 
 from tfreezer import paths, utils
+
+
+UNSUPPORTED_MODULES = (
+    "debugpy",
+    "setuptools",
+)
 
 
 @dataclasses.dataclass
@@ -100,6 +106,8 @@ def _parse_config(
         assert hasattr(module, "entry_module") and isinstance(module.entry_module, str)
         assert hasattr(module, "hidden_imports") and isinstance(module.hidden_imports, list)
         assert hasattr(module, "excludes") and isinstance(module.excludes, list)
+        for unsupported_module in UNSUPPORTED_MODULES:
+            module.excludes.append(unsupported_module)
         freeze_config = FreezeConfig(module.entry_module, ",".join(module.hidden_imports), ",".join(module.excludes), [], "", [])
         if hasattr(module, "datas") and isinstance(module.datas, list):
             freeze_config.datas = module.datas
@@ -113,7 +121,8 @@ def _parse_config(
     hidden_imports = hidden_imports or []
     hidden_imports.append("encodings.cp437")
     excludes = excludes or []
-    excludes.append("debugpy")
+    for unsupported_module in UNSUPPORTED_MODULES:
+        excludes.append(unsupported_module)
     if sys.platform.startswith("win"):
         excludes.append("multiprocessing.popen_fork")
         excludes.append("multiprocessing.popen_forkserver")
