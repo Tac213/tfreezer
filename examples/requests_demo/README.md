@@ -1,6 +1,6 @@
-# request_demo
+# requests_demo
 
-project to test if request is freezable.
+Example to test if requests is freezable.
 
 Freeze command:
 

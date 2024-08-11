@@ -15,8 +15,7 @@
         "debug",
         "--workpath",
         "${workspaceFolder}/build/basic_check",
-        "--entry-module",
-        "${workspaceFolder}/examples/basic_check/basic_check.py"
+        "${workspaceFolder}/examples/basic_check/freeze_config.py"
       ],
       "group": {
         "kind": "build"
@@ -56,8 +55,7 @@
         "debug",
         "--workpath",
         "${workspaceFolder}/build/requests_demo",
-        "--entry-module",
-        "${workspaceFolder}/examples/requests_demo/requests_demo.py"
+        "${workspaceFolder}/examples/requests_demo/freeze_config.py"
       ],
       "group": {
         "kind": "build"
@@ -77,8 +75,7 @@
         "debug",
         "--workpath",
         "${workspaceFolder}/build/pywin32_demo",
-        "--entry-module",
-        "${workspaceFolder}/examples/pywin32_demo/pywin32_demo.py"
+        "${workspaceFolder}/examples/pywin32_demo/freeze_config.py"
       ],
       "group": {
         "kind": "build"

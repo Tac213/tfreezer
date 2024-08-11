@@ -76,6 +76,7 @@ class PyiQtHookModule(types.ModuleType):
     hiddenimports: list[str]
     binaries: list[tuple[str, str]]
     datas: list[tuple[str, str]]
+    hook: _t.Optional[_t.Callable[[dict[str, modulefinder.Module], list[tuple[str, str, str]], list[tuple[str, str, str]]], None]]
 
 
 def get_platform_dynload_dir() -> str:
@@ -435,6 +436,8 @@ def process_hook_modules(
                 todo.append(hiddenimport)
             pyi_binaries.extend(hook.binaries)
             pyi_datas.extend(hook.datas)
+            if hasattr(hook, "hook") and callable(hook.hook):
+                hook.hook(modules, pyi_binaries, pyi_datas)
             processed.add(module_name)
         if todo:
             process_impl(todo)

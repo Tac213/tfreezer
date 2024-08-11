@@ -119,16 +119,9 @@ def _parse_config(
     if not entry_module:
         raise ValueError("--entry-module should be specified")
     hidden_imports = hidden_imports or []
-    hidden_imports.append("encodings.cp437")
     excludes = excludes or []
     for unsupported_module in UNSUPPORTED_MODULES:
         excludes.append(unsupported_module)
-    if sys.platform.startswith("win"):
-        excludes.append("multiprocessing.popen_fork")
-        excludes.append("multiprocessing.popen_forkserver")
-        excludes.append("multiprocessing.popen_spawn_posix")
-    else:
-        excludes.append("multiprocessing.popen_spawn_win32")
     return FreezeConfig(
         entry_module,
         ",".join(hidden_imports),

@@ -24,6 +24,7 @@ if os.environ.get("DEBUG"):
     import debugpy
 
 from tfreezer import paths, log, utils, config, freeze_module
+from tfreezer.hooks import analysis_hooks
 
 # See: ${CPYTHON_SRC}/Python/frozen.c
 OFFICIAL_FROZEN_MODULE_NAMES = (
@@ -299,6 +300,9 @@ def analyze_module(analysis_info: ModuleAnalysisInfo, module_type: ModuleType) -
     excludes = analysis_info.excludes[:]
     is_win = sys.platform.startswith("win")
     if is_win:
+        hidden_imports += [
+            "encodings.cp437",
+        ]
         # copy from ${CPYTHON_SRC}/Tools/freeze/freeze.py
         excludes += [
             "dos",
@@ -308,6 +312,13 @@ def analyze_module(analysis_info: ModuleAnalysisInfo, module_type: ModuleType) -
             "MACFS",
             "posix",
             "tty",
+            "multiprocessing.popen_fork",
+            "multiprocessing.popen_forkserver",
+            "multiprocessing.popen_spawn_posix",
+        ]
+    else:
+        excludes += [
+            "multiprocessing.popen_spawn_win32",
         ]
     bootstrap_module_names = get_python_bootstrap_module_names()
     # modules that are imported by the Python runtime
@@ -334,7 +345,11 @@ def analyze_module(analysis_info: ModuleAnalysisInfo, module_type: ModuleType) -
         additional_path = os.path.dirname(additional_path)
     if additional_path is not None:
         path.append(additional_path)
-    finder = modulefinder.ModuleFinder(path=path, excludes=excludes)
+    extra_hidden_imports: list[str] = []
+    replace_paths: list[str, str] = []
+    extra_modules = analysis_hooks.hook(extra_hidden_imports, excludes, path, replace_paths)
+    finder = modulefinder.ModuleFinder(path=path, excludes=excludes, replace_paths=replace_paths)
+    finder.modules.update(extra_modules)
 
     # Add tfreezer bootstrap modules
     tf_bootstrap = modulefinder.Module("tf_bootstrap", os.path.join(os.path.dirname(__file__), "bootstrap", "tf_bootstrap.py"))
@@ -349,16 +364,6 @@ def analyze_module(analysis_info: ModuleAnalysisInfo, module_type: ModuleType) -
     finder.modules[tf_pywin32.__name__] = tf_pywin32
 
     for hidden_import_name in hidden_imports:
-        if hidden_import_name.startswith(("win32comext", "win32com")):
-            real_module = importlib.import_module(hidden_import_name)
-            _, _, child_mod_name = hidden_import_name.partition(".")
-            hidden_import_name = f"win32com.{child_mod_name}"
-            finder.modules[hidden_import_name] = modulefinder.Module(
-                hidden_import_name, real_module.__file__, getattr(real_module, "__path__", None)
-            )
-            continue
-        if hidden_import_name.startswith("pywin32"):
-            continue
         finder.import_hook(hidden_import_name)
 
     finder.run_script(module_info.origin)
