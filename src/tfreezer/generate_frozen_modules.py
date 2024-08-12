@@ -250,7 +250,7 @@ def get_module_info(module_name: str, is_entry_module: bool = False) -> ModuleIn
     """
     if module_name.endswith(tuple(machinery.SOURCE_SUFFIXES)):
         source_module_path = os.path.abspath(module_name)
-        fullname = "__main__"
+        fullname = "__tfreezer_main__"
         loader = machinery.SourceFileLoader(fullname, source_module_path)
         spec = util.spec_from_file_location(fullname, source_module_path, loader=loader)
         module = util.module_from_spec(spec)
@@ -367,6 +367,9 @@ def analyze_module(analysis_info: ModuleAnalysisInfo, module_type: ModuleType) -
         finder.import_hook(hidden_import_name)
 
     finder.run_script(module_info.origin)
+    assert "__main__" in finder.modules
+    main_module = finder.modules.pop("__main__")
+    finder.modules["__tfreezer_main__"] = main_module
     if os.environ.get("DEBUG"):
         finder.report()
     modules = {}
@@ -502,7 +505,7 @@ def make_freeze(entry_module_name: str) -> None:
     frozen_structs = []
     with multiprocessing.Pool(processes=multiprocessing.cpu_count()) as pool:
         for module_name, module_file in modules.items():
-            if module_name == "__main__":
+            if module_name == "__tfreezer_main__":
                 module_info = get_module_info(entry_module_name, is_entry_module=True)
                 module_file = module_info.origin
             elif not os.path.isfile(module_file):

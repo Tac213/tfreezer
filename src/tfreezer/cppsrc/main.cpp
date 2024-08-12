@@ -83,7 +83,7 @@ static int tfreezer_bootstrap()
     bootstrap_module = PyImport_ImportModule("tf_bootstrap");
     if (bootstrap_module == nullptr)
     {
-        fprintf(stderr, "Could not import runpy module\n");
+        fprintf(stderr, "Could not import tf_bootstrap module\n");
         PyErr_Print();
         return 1;
     }
@@ -416,7 +416,7 @@ WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nShowCmd) // 
     {
         return exitcode;
     }
-    exitcode = pymain_run_module(L"__main__", 0);
+    exitcode = pymain_run_module(L"__tfreezer_main__", 0);
 #endif // !defined(FREEZE_APPLICATION)
 
     return exitcode;

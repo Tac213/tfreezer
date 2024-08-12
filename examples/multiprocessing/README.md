@@ -6,6 +6,7 @@ Freeze command:
 
 ```bash
 # cwd: root of tfreezer
-python -m tfreezer --variant debug --workpath build/good_multiprocessing --entry-module examples/multiprocessing/good_multiprocessing.py
-python -m tfreezer --variant debug --workpath build/bad_multiprocessing --entry-module examples/multiprocessing/bad_multiprocessing.py
+python -m tfreezer --variant debug --workpath build/good_multiprocessing --entry-module examples/multiprocessing/multiprocessing_pool.py
+python -m tfreezer --variant debug --workpath build/bad_multiprocessing --entry-module examples/multiprocessing/multiprocessing_single.py
+python -m tfreezer --variant debug --workpath build/multimodule_multiprocessing examples/multiprocessing/multimodule_freeze_config.py
 ```
