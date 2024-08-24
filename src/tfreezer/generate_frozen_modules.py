@@ -356,10 +356,6 @@ def analyze_module(analysis_info: ModuleAnalysisInfo, module_type: ModuleType) -
     finder.modules[tf_bootstrap.__name__] = tf_bootstrap
     tf_importer = modulefinder.Module("tf_importer", os.path.join(os.path.dirname(__file__), "bootstrap", "tf_importer.py"))
     finder.modules[tf_importer.__name__] = tf_importer
-    tf_multiprocessing = modulefinder.Module(
-        "tf_multiprocessing", os.path.join(os.path.dirname(__file__), "bootstrap", "tf_multiprocessing.py")
-    )
-    finder.modules[tf_multiprocessing.__name__] = tf_multiprocessing
     tf_pywin32 = modulefinder.Module("tf_pywin32", os.path.join(os.path.dirname(__file__), "bootstrap", "tf_pywin32.py"))
     finder.modules[tf_pywin32.__name__] = tf_pywin32
 

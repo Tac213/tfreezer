@@ -13,12 +13,6 @@ tf_importer.install()
 if not hasattr(sys, "frozen"):
     sys.frozen = True
 
-
-import tf_multiprocessing
-
-# Install tf multiprocessing hooks
-tf_multiprocessing.install()
-
 # Install the hooks for pywin32 (Windows only)
 if sys.platform.startswith("win"):
     import tf_pywin32

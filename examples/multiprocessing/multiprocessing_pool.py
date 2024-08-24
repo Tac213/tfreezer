@@ -5,6 +5,7 @@ from multiprocessing import spawn
 
 def f(x):
     print("hello world!")
+    print(sys.argv)
     return x * x
 
 

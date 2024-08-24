@@ -119,6 +119,16 @@ static int multiprocess_main(int argc, char** argv)
         fprintf(stderr, "%s", PyStatus_IsError(status) != 0 ? status.err_msg : "Failed to set sys._stdlib_dir.");
         return 1;
     }
+
+    config.parse_argv = 0;
+
+    status = PyConfig_SetBytesArgv(&config, argc, const_cast<char* const*>(argv));
+    if (PyStatus_Exception(status))
+    {
+        PyConfig_Clear(&config);
+        fprintf(stderr, "%s", PyStatus_IsError(status) != 0 ? status.err_msg : "Failed to set sys.argv.");
+        return 1;
+    }
     status = Py_InitializeFromConfig(&config);
     if (PyStatus_Exception(status))
     {
@@ -360,6 +370,7 @@ WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nShowCmd) // 
         fprintf(stderr, "%s", PyStatus_IsError(status) != 0 ? status.err_msg : "Failed to set sys._stdlib_dir.");
         return 1;
     }
+    config.parse_argv = 0;
 #endif // !defined(FREEZE_APPLICATION)
 
     status = PyConfig_SetBytesArgv(&config, argc, const_cast<char* const*>(argv));
