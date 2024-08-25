@@ -1,6 +1,8 @@
 import sys
 from importlib import resources
 
+import fib
+
 if __name__ == "__main__":
     print(sys.path)
     print(sys._stdlib_dir)  # pylint: disable=protected-access
@@ -11,3 +13,4 @@ if __name__ == "__main__":
     print(resources.__spec__)
     print(resources.__spec__.origin)
     print(resources.__file__)
+    print(fib.fib(32))

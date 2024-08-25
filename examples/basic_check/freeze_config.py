@@ -1,4 +1,7 @@
 import os
+import sys
+
+sys.path.append(os.path.normpath(os.path.dirname(__file__)))
 
 entry_module = os.path.normpath(os.path.join(__file__, "..", "basic_check.py"))
 
@@ -24,3 +27,5 @@ excludes = [
     "select",
     "unicodedata",
 ]
+
+mypyc_modules = ["fib"]

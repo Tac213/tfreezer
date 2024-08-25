@@ -23,7 +23,7 @@ import multiprocessing
 if os.environ.get("DEBUG"):
     import debugpy
 
-from tfreezer import paths, log, utils, config, freeze_module
+from tfreezer import paths, log, utils, config, freeze_module, mypyc_source_generator
 from tfreezer.hooks import analysis_hooks
 
 # See: ${CPYTHON_SRC}/Python/frozen.c
@@ -383,7 +383,10 @@ def analyze_module(analysis_info: ModuleAnalysisInfo, module_type: ModuleType) -
 
 
 def get_frozen_module_names(
-    analysis_info: ModuleAnalysisInfo, *, info: typing.Optional[dict[str, modulefinder.Module]] = None
+    analysis_info: ModuleAnalysisInfo,
+    *,
+    info: typing.Optional[dict[str, modulefinder.Module]] = None,
+    mypyc_module_info: typing.Optional[dict[str, modulefinder.Module]],
 ) -> list[str]:
     """
     Get all frozen module names
@@ -395,6 +398,10 @@ def get_frozen_module_names(
     frozen_module_names = []
     for module_name in module_names:
         if is_frozen_module(module_name):
+            continue
+        if module_name in analysis_info.mypyc_module_names:
+            if mypyc_module_info is not None:
+                mypyc_module_info[module_name] = modules[module_name]
             continue
         frozen_module_names.append(module_name)
     if info is not None:
@@ -468,12 +475,17 @@ def print_frozen_header_file_names(entry_module_name: str, hidden_imports_arg: s
     mypyc_modules = get_list_arg(mypyc_modules_arg, "--mypyc-modules")
     analysis_info = ModuleAnalysisInfo(entry_module_name, hidden_imports, excludes, mypyc_modules)
     module_info = {}
-    module_names = get_frozen_module_names(analysis_info, info=module_info)
+    mypyc_module_info = {}
+    module_names = get_frozen_module_names(analysis_info, info=module_info, mypyc_module_info=mypyc_module_info)
     headers = [paths.FROZEN_MODULES_HEADER.replace("\\", "/")]
     for module_name in module_names:
         header = os.path.join(paths.FROZEN_MODULE_DIR, f"{module_name}.h")
         header = header.replace("\\", "/")
         headers.append(header)
+    mypyc_generator = mypyc_source_generator.MyPycSourceGenerator()
+    for module_name, module in mypyc_module_info.items():
+        mypyc_generator.generate(module_name, module.__file__)
+    mypyc_generator.dump_mypyc_info()
     _dump_frozen_module_info(module_names, module_info, headers)
 
 
