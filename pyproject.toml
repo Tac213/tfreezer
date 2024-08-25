@@ -13,6 +13,7 @@ authors = [
     {name = "Tac", email = "cookiezhx@163.com"},
 ]
 dependencies = [
+    "mypy[mypyc]",
     "pyinstaller>=6.4.0",
 ]
 

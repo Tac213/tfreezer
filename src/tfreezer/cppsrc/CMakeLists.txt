@@ -45,6 +45,14 @@ if(FREEZE_APPLICATION)
         set(EXCLUDES "${TF_BUILD_DIR}/excludes")
     endif()
 
+    if(NOT DEFINED MYPYC_MODULES)
+        if(NOT EXISTS ${TF_BUILD_DIR}/mypyc_modules)
+            message(FATAL_ERROR "Neither MYPYC_MODULES nor ${TF_BUILD_DIR}/mypyc_modules is set.")
+        endif()
+
+        set(MYPYC_MODULES "${TF_BUILD_DIR}/mypyc_modules")
+    endif()
+
     if(NOT DEFINED TF_APPROOT_DIR)
         message(FATAL_ERROR "TF_APPROOT_DIR is not defined")
     endif()
@@ -53,7 +61,7 @@ if(FREEZE_APPLICATION)
     execute_process(
         COMMAND ${PYTHON_EXECUTABLE} "-m" "tfreezer.generate_frozen_modules" "--get-frozen-header-file-names"
         "${TF_BUILD_DIR}"
-        "${ENTRY_MODULE_NAME}" "--hidden-imports=${HIDDEN_IMPORTS}" "--excludes=${EXCLUDES}"
+        "${ENTRY_MODULE_NAME}" "--hidden-imports=${HIDDEN_IMPORTS}" "--excludes=${EXCLUDES}" "--mypyc-modules=${MYPYC_MODULES}"
         RESULT_VARIABLE _resullt
         WORKING_DIRECTORY ${TF_APPROOT_DIR}
     )
@@ -85,6 +93,15 @@ if(FREEZE_APPLICATION)
         ${SOURCES}
         ${_frozen_headers}
     )
+
+    if(EXISTS ${TF_BUILD_DIR}/mypyc_sources)
+        file(READ ${TF_BUILD_DIR}/mypyc_sources _mypyc_sources)
+        string(STRIP "${_mypyc_sources}" _mypyc_sources)
+        set(SOURCES
+            ${SOURCES}
+            ${_mypyc_sources}
+        )
+    endif()
 endif()
 
 # Add icons
@@ -110,6 +127,26 @@ target_include_directories(${PROJECT_NAME}
     PRIVATE
     ${TF_GENERATED_HEADERS_DIR}
 )
+
+if(EXISTS ${TF_BUILD_DIR}/mypyc_include_dirs)
+    file(READ ${TF_BUILD_DIR}/mypyc_include_dirs _mypyc_include_dirs)
+    string(STRIP "${_mypyc_include_dirs}" _mypyc_include_dirs)
+    target_include_directories(${PROJECT_NAME}
+        PRIVATE
+        ${_mypyc_include_dirs}
+    )
+    target_compile_definitions(${PROJECT_NAME}
+        PRIVATE
+        USING_MYPYC_MODULES
+    )
+endif()
+
+if(DEFINED TF_DEV_MYPYC_RT_DIR)
+    target_include_directories(${PROJECT_NAME}
+        PRIVATE
+        ${TF_DEV_MYPYC_RT_DIR}
+    )
+endif()
 
 if(NEED_CONSOLE)
     target_compile_definitions(${PROJECT_NAME}

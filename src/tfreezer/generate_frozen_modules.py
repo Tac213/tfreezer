@@ -23,7 +23,7 @@ import multiprocessing
 if os.environ.get("DEBUG"):
     import debugpy
 
-from tfreezer import paths, log, utils, config, freeze_module
+from tfreezer import paths, log, utils, config, freeze_module, mypyc_source_generator
 from tfreezer.hooks import analysis_hooks
 
 # See: ${CPYTHON_SRC}/Python/frozen.c
@@ -84,6 +84,7 @@ class ModuleAnalysisInfo:
     entry_module_name: str  # A python module name or a signle python_file
     hidden_imports: list[str]  # hidden import module names
     excludes: list[str]  # exclude module names
+    mypyc_module_names: list[str]  # modules that are needed to be compiled to c using mypyc
 
 
 class ModuleType(enum.IntFlag):
@@ -382,7 +383,10 @@ def analyze_module(analysis_info: ModuleAnalysisInfo, module_type: ModuleType) -
 
 
 def get_frozen_module_names(
-    analysis_info: ModuleAnalysisInfo, *, info: typing.Optional[dict[str, modulefinder.Module]] = None
+    analysis_info: ModuleAnalysisInfo,
+    *,
+    info: typing.Optional[dict[str, modulefinder.Module]] = None,
+    mypyc_module_info: typing.Optional[dict[str, modulefinder.Module]],
 ) -> list[str]:
     """
     Get all frozen module names
@@ -394,6 +398,10 @@ def get_frozen_module_names(
     frozen_module_names = []
     for module_name in module_names:
         if is_frozen_module(module_name):
+            continue
+        if module_name in analysis_info.mypyc_module_names:
+            if mypyc_module_info is not None:
+                mypyc_module_info[module_name] = modules[module_name]
             continue
         frozen_module_names.append(module_name)
     if info is not None:
@@ -436,13 +444,14 @@ def _load_frozen_module_info() -> dict[str, str]:
     return module.FROZEN_MODULES
 
 
-def print_frozen_header_file_names(entry_module_name: str, hidden_imports_arg: str, excludes_arg: str) -> None:
+def print_frozen_header_file_names(entry_module_name: str, hidden_imports_arg: str, excludes_arg: str, mypyc_modules_arg: str) -> None:
     """
     Print all frozen header file names for cmake
     Args:
         entry_module: A python module name or a single python_file
         hidden_imports_arg: hidden import modules, e.g. --hidden-imports=xx,yy,aa.bb
         excludes_arg: excludes modules, e.g. --excludes=test,unittest
+        mypyc_modules_arg: excludes modules, e.g. --mypyc-modules-=mylib1,mylib1.performance_sensitive
     Returns:
         None
     """
@@ -457,16 +466,26 @@ def print_frozen_header_file_names(entry_module_name: str, hidden_imports_arg: s
     if os.path.isfile(file_name):
         with open(file_name, "r", encoding="utf-8") as fp:
             excludes_arg = f"--excludes={fp.read().strip()}"
+    file_name = mypyc_modules_arg.rpartition("=")[-1]
+    if os.path.isfile(file_name):
+        with open(file_name, "r", encoding="utf-8") as fp:
+            mypyc_modules_arg = f"--mypyc-modules={fp.read().strip()}"
     hidden_imports = get_list_arg(hidden_imports_arg, "--hidden-imports")
     excludes = get_list_arg(excludes_arg, "--excludes")
-    analysis_info = ModuleAnalysisInfo(entry_module_name, hidden_imports, excludes)
+    mypyc_modules = get_list_arg(mypyc_modules_arg, "--mypyc-modules")
+    analysis_info = ModuleAnalysisInfo(entry_module_name, hidden_imports, excludes, mypyc_modules)
     module_info = {}
-    module_names = get_frozen_module_names(analysis_info, info=module_info)
+    mypyc_module_info = {}
+    module_names = get_frozen_module_names(analysis_info, info=module_info, mypyc_module_info=mypyc_module_info)
     headers = [paths.FROZEN_MODULES_HEADER.replace("\\", "/")]
     for module_name in module_names:
         header = os.path.join(paths.FROZEN_MODULE_DIR, f"{module_name}.h")
         header = header.replace("\\", "/")
         headers.append(header)
+    mypyc_generator = mypyc_source_generator.MyPycSourceGenerator()
+    for module_name, module in mypyc_module_info.items():
+        mypyc_generator.generate(module_name, module.__file__)
+    mypyc_generator.dump_mypyc_info()
     _dump_frozen_module_info(module_names, module_info, headers)
 
 

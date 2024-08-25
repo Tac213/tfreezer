@@ -14,6 +14,7 @@ endif()
 set(ENTRY_MODULE_NAME "${CMAKE_CURRENT_SOURCE_DIR}/examples/basic_check/basic_check.py")
 set(HIDDEN_IMPORTS "")
 set(EXCLUDES "")
+set(MYPYC_MODULES "")
 set(DATAS "")
 set(TF_APP_NAME "basic_check")
 set(TF_APPROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
@@ -32,5 +33,11 @@ FROZEN_MODULES_HEADER = r\"${TF_GENERATED_HEADERS_DIR}/frozen_modules/frozen_mod
 PYTHON_EXE = r\"${PYTHON_EXECUTABLE}\"
 CMAKE_EXE = r\"\"
 ")
+
+execute_process(
+    COMMAND ${PYTHON_EXECUTABLE} "-c" "from mypyc.build import include_dir;print(include_dir().replace('\\\\', '/'))"
+    OUTPUT_VARIABLE TF_DEV_MYPYC_RT_DIR
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
 
 add_subdirectory(src/tfreezer/cppsrc)

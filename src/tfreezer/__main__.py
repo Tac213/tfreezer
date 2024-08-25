@@ -22,6 +22,7 @@ class _ArgumentNamespace(argparse.Namespace):
     entry_module: str
     hidden_imports: _t.Optional[list[str]]
     excludes: _t.Optional[list[str]]
+    mypyc_modules: _t.Optional[list[str]]
     config_file: _t.Optional[str]
 
 
@@ -37,6 +38,7 @@ def get_argument_parser() -> argparse.ArgumentParser:
     parser.add_argument("--entry-module", type=str, default="")
     parser.add_argument("--hidden-imports", type=str, nargs="+")
     parser.add_argument("--excludes", type=str, nargs="+")
+    parser.add_argument("--mypyc-modules", type=str, nargs="+")
     parser.add_argument("config_file", type=str, nargs="?")
     return parser
 
@@ -78,7 +80,11 @@ def _cmake_configure(args: _ArgumentNamespace) -> None:
         sys.exit(1)
     debug = args.variant == "debug"
     freeze_config = config.dump_freeze_config(
-        entry_module=args.entry_module, hidden_imports=args.hidden_imports, excludes=args.excludes, config_file=args.config_file
+        entry_module=args.entry_module,
+        hidden_imports=args.hidden_imports,
+        excludes=args.excludes,
+        mypyc_modules=args.mypyc_modules,
+        config_file=args.config_file,
     )
     config.dump_python_path()
     app_name = args.appname

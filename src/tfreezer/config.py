@@ -21,6 +21,7 @@ class FreezeConfig:
     entry_module: str
     hidden_imports: str
     excludes: str
+    mypyc_modules: str
     datas: list[str]
     # qt related configs
     qt_library_name: str
@@ -32,9 +33,10 @@ def dump_freeze_config(
     entry_module: _t.Optional[str],
     hidden_imports: _t.Optional[list[str]],
     excludes: _t.Optional[list[str]],
+    mypyc_modules: _t.Optional[list[str]],
     config_file: _t.Optional[str],
 ) -> FreezeConfig:
-    freeze_config = _parse_config(entry_module, hidden_imports, excludes, config_file)
+    freeze_config = _parse_config(entry_module, hidden_imports, excludes, mypyc_modules, config_file)
     if not os.path.isdir(paths.BUILD_DIR):
         os.makedirs(paths.BUILD_DIR)
 
@@ -52,6 +54,11 @@ def dump_freeze_config(
     excludes_file = os.path.join(paths.BUILD_DIR, "excludes")
     with open(excludes_file, "w", encoding="utf-8") as fp:
         fp.write(freeze_config.excludes)
+
+    # mypyc_modules
+    mypyc_modules_file = os.path.join(paths.BUILD_DIR, "mypyc_modules")
+    with open(mypyc_modules_file, "w", encoding="utf-8") as fp:
+        fp.write(freeze_config.mypyc_modules)
 
     # datas
     datas_file = os.path.join(paths.BUILD_DIR, "datas")
@@ -98,6 +105,7 @@ def _parse_config(
     entry_module: _t.Optional[str],
     hidden_imports: _t.Optional[list[str]],
     excludes: _t.Optional[list[str]],
+    mypyc_modules: _t.Optional[list[str]],
     config_file: _t.Optional[str],
 ) -> FreezeConfig:
     if config_file:
@@ -108,7 +116,12 @@ def _parse_config(
         assert hasattr(module, "excludes") and isinstance(module.excludes, list)
         for unsupported_module in UNSUPPORTED_MODULES:
             module.excludes.append(unsupported_module)
-        freeze_config = FreezeConfig(module.entry_module, ",".join(module.hidden_imports), ",".join(module.excludes), [], "", [])
+        mypyc_modules = []
+        if hasattr(module, "mypyc_modules") and isinstance(module.mypyc_modules, list):
+            mypyc_modules = module.mypyc_modules
+        freeze_config = FreezeConfig(
+            module.entry_module, ",".join(module.hidden_imports), ",".join(module.excludes), ",".join(mypyc_modules), [], "", []
+        )
         if hasattr(module, "datas") and isinstance(module.datas, list):
             freeze_config.datas = module.datas
         if hasattr(module, "qt_library_name") and isinstance(module.qt_library_name, str):
@@ -120,12 +133,14 @@ def _parse_config(
         raise ValueError("--entry-module should be specified")
     hidden_imports = hidden_imports or []
     excludes = excludes or []
+    mypyc_modules = mypyc_modules or []
     for unsupported_module in UNSUPPORTED_MODULES:
         excludes.append(unsupported_module)
     return FreezeConfig(
         entry_module,
         ",".join(hidden_imports),
         ",".join(excludes),
+        ",".join(mypyc_modules),
         [],
         "",
         [],
