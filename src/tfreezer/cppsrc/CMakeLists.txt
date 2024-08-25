@@ -45,6 +45,14 @@ if(FREEZE_APPLICATION)
         set(EXCLUDES "${TF_BUILD_DIR}/excludes")
     endif()
 
+    if(NOT DEFINED MYPYC_MODULES)
+        if(NOT EXISTS ${TF_BUILD_DIR}/mypyc_modules)
+            message(FATAL_ERROR "Neither MYPYC_MODULES nor ${TF_BUILD_DIR}/mypyc_modules is set.")
+        endif()
+
+        set(MYPYC_MODULES "${TF_BUILD_DIR}/mypyc_modules")
+    endif()
+
     if(NOT DEFINED TF_APPROOT_DIR)
         message(FATAL_ERROR "TF_APPROOT_DIR is not defined")
     endif()
@@ -53,7 +61,7 @@ if(FREEZE_APPLICATION)
     execute_process(
         COMMAND ${PYTHON_EXECUTABLE} "-m" "tfreezer.generate_frozen_modules" "--get-frozen-header-file-names"
         "${TF_BUILD_DIR}"
-        "${ENTRY_MODULE_NAME}" "--hidden-imports=${HIDDEN_IMPORTS}" "--excludes=${EXCLUDES}"
+        "${ENTRY_MODULE_NAME}" "--hidden-imports=${HIDDEN_IMPORTS}" "--excludes=${EXCLUDES}" "--mypyc-modules=${MYPYC_MODULES}"
         RESULT_VARIABLE _resullt
         WORKING_DIRECTORY ${TF_APPROOT_DIR}
     )

@@ -84,6 +84,7 @@ class ModuleAnalysisInfo:
     entry_module_name: str  # A python module name or a signle python_file
     hidden_imports: list[str]  # hidden import module names
     excludes: list[str]  # exclude module names
+    mypyc_module_names: list[str]  # modules that are needed to be compiled to c using mypyc
 
 
 class ModuleType(enum.IntFlag):
@@ -436,13 +437,14 @@ def _load_frozen_module_info() -> dict[str, str]:
     return module.FROZEN_MODULES
 
 
-def print_frozen_header_file_names(entry_module_name: str, hidden_imports_arg: str, excludes_arg: str) -> None:
+def print_frozen_header_file_names(entry_module_name: str, hidden_imports_arg: str, excludes_arg: str, mypyc_modules_arg: str) -> None:
     """
     Print all frozen header file names for cmake
     Args:
         entry_module: A python module name or a single python_file
         hidden_imports_arg: hidden import modules, e.g. --hidden-imports=xx,yy,aa.bb
         excludes_arg: excludes modules, e.g. --excludes=test,unittest
+        mypyc_modules_arg: excludes modules, e.g. --mypyc-modules-=mylib1,mylib1.performance_sensitive
     Returns:
         None
     """
@@ -457,9 +459,14 @@ def print_frozen_header_file_names(entry_module_name: str, hidden_imports_arg: s
     if os.path.isfile(file_name):
         with open(file_name, "r", encoding="utf-8") as fp:
             excludes_arg = f"--excludes={fp.read().strip()}"
+    file_name = mypyc_modules_arg.rpartition("=")[-1]
+    if os.path.isfile(file_name):
+        with open(file_name, "r", encoding="utf-8") as fp:
+            mypyc_modules_arg = f"--mypyc-modules={fp.read().strip()}"
     hidden_imports = get_list_arg(hidden_imports_arg, "--hidden-imports")
     excludes = get_list_arg(excludes_arg, "--excludes")
-    analysis_info = ModuleAnalysisInfo(entry_module_name, hidden_imports, excludes)
+    mypyc_modules = get_list_arg(mypyc_modules_arg, "--mypyc-modules")
+    analysis_info = ModuleAnalysisInfo(entry_module_name, hidden_imports, excludes, mypyc_modules)
     module_info = {}
     module_names = get_frozen_module_names(analysis_info, info=module_info)
     headers = [paths.FROZEN_MODULES_HEADER.replace("\\", "/")]

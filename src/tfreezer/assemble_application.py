@@ -459,7 +459,7 @@ def assemble_application(assemble_info: AssembleInfo) -> None:
 
     # Analyze which modules are used to run the application
     analysis_info = generate_frozen_modules.ModuleAnalysisInfo(
-        assemble_info.entry_module_name, assemble_info.hidden_imports, assemble_info.excludes
+        assemble_info.entry_module_name, assemble_info.hidden_imports, assemble_info.excludes, []
     )
     modules = generate_frozen_modules.analyze_module(
         analysis_info, generate_frozen_modules.ModuleType.EXTENSION_MODULE | generate_frozen_modules.ModuleType.SOURCE_MODULE
