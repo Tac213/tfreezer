@@ -135,6 +135,10 @@ if(EXISTS ${TF_BUILD_DIR}/mypyc_include_dirs)
         PRIVATE
         ${_mypyc_include_dirs}
     )
+    target_compile_definitions(${PROJECT_NAME}
+        PRIVATE
+        USING_MYPYC_MODULES
+    )
 endif()
 
 if(NEED_CONSOLE)

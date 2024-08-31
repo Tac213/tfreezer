@@ -16,6 +16,10 @@
 #    include "frozen_modules/frozen_modules.h"
 #endif
 
+#if defined(USING_MYPYC_MODULES)
+#    include "mypyc_modules/tfreezer_mypyc_modules.h"
+#endif
+
 #define STR_HELPER(x) #x
 #define STR(x)        STR_HELPER(x)
 
@@ -305,6 +309,9 @@ WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nShowCmd) // 
 #if !defined(NEED_CONSOLE)
     int    argc = __argc;
     char** argv = __argv;
+#endif
+#if defined(USING_MYPYC_MODULES)
+    INITIALIZE_MYPYC_MODULES
 #endif
 #if defined(FREEZE_APPLICATION)
     PyImport_FrozenModules = _PyImport_FrozenModules;
