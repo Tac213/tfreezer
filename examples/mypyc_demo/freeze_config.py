@@ -1,6 +1,9 @@
 import os
+import sys
 
-entry_module = os.path.normpath(os.path.join(__file__, "..", "basic_check.py"))
+sys.path.append(os.path.normpath(os.path.dirname(__file__)))
+
+entry_module = os.path.normpath(os.path.join(__file__, "..", "mypyc_demo.py"))
 
 hidden_imports = []
 
@@ -24,3 +27,5 @@ excludes = [
     "select",
     "unicodedata",
 ]
+
+mypyc_modules = ["fib"]
