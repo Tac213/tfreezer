@@ -7,9 +7,11 @@ import pathlib
 import typing as _t
 
 from mypyc.codegen import emitmodule
-from mypyc import build, options, common
+from mypyc import options, common
+from mypyc.build import include_dir
 
 from tfreezer import paths
+from tfreezer.mypyc_handler import build
 
 
 class MyPycModuleInfo(_t.NamedTuple):
@@ -34,22 +36,24 @@ class MyPycSourceGenerator:
         groups, group_cfilenames = build.mypyc_build([module_path], compiler_options)
         new_group_cfilenames: list[tuple[list[str], list[str]]] = []
         for (group_sources, _), (cfilenames, deps) in zip(groups, group_cfilenames):
-            assert len(group_sources) == 1 and len(cfilenames) == 1 and len(deps) == 2
-            assert group_sources[0].module == module_name
-            public_header_path = ""
-            private_header_path = ""
-            for dep in deps:
-                if os.path.basename(dep) == self._public_header_name:
-                    public_header_path = dep
-                elif os.path.basename(dep) == self._private_header_name:
-                    private_header_path = dep
-                else:
-                    raise ValueError(f"Unknown dependency: {dep}")
-            public_header_path, private_header_path = self._process_module_headers(module_name, public_header_path, private_header_path)
-            public_header_name = os.path.basename(public_header_path)
-            private_header_name = os.path.basename(private_header_path)
-            source_path = self._process_module_source(module_name, cfilenames[0], public_header_name, private_header_name)
-            new_group_cfilenames.append(([source_path], [public_header_path, private_header_path]))
+            print(group_sources, _, cfilenames, deps)
+            # assert len(group_sources) == 1 and len(cfilenames) == 1 and len(deps) == 2
+            # assert group_sources[0].module == module_name
+            # public_header_path = ""
+            # private_header_path = ""
+            # for dep in deps:
+            #     if os.path.basename(dep) == self._public_header_name:
+            #         public_header_path = dep
+            #     elif os.path.basename(dep) == self._private_header_name:
+            #         private_header_path = dep
+            #     else:
+            #         raise ValueError(f"Unknown dependency: {dep}")
+            # public_header_path, private_header_path = self._process_module_headers(module_name, public_header_path, private_header_path)
+            # public_header_name = os.path.basename(public_header_path)
+            # private_header_name = os.path.basename(private_header_path)
+            # source_path = self._process_module_source(module_name, cfilenames[0], public_header_name, private_header_name)
+            # new_group_cfilenames.append(([source_path], [public_header_path, private_header_path]))
+            new_group_cfilenames.append((cfilenames, deps))
         mypyc_module_info = MyPycModuleInfo(module_name, module_path, groups, new_group_cfilenames)
         self._modules[module_name] = mypyc_module_info
 
@@ -61,7 +65,7 @@ class MyPycSourceGenerator:
             return
         mypyc_modules_lines: list[str] = []
         initialize_macro_lines = ["#define INITIALIZE_MYPYC_MODULES"]
-        mypyc_lib_rt_dir = build.include_dir()
+        mypyc_lib_rt_dir = include_dir()
         include_dirs = [mypyc_lib_rt_dir]
         sources = [os.path.join(mypyc_lib_rt_dir, runtime_c).replace("\\", "/") for runtime_c in common.RUNTIME_C_FILES]
         for module_name, module_info in self._modules.items():
