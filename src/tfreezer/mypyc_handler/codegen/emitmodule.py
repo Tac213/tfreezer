@@ -171,6 +171,17 @@ class GroupGenerator:
     def module_name_no_dot(self) -> str:
         return exported_name(self.group_name)
 
+    def function_name_map(self, module_name: str, module: ModuleIR, emitter: Emitter) -> dict[str, str]:
+        name_map: dict[str, str] = {}
+        for fn in module.functions:
+            original_native_fn_name = f"{NATIVE_PREFIX}{fn.cname(emitter.names)}"
+            native_fn_name = f"{NATIVE_PREFIX}{fn.cname(emitter.names)}_{exported_name(module_name)}"
+            name_map[original_native_fn_name] = native_fn_name
+            original_py_fn_name = f"{PREFIX}{fn.cname(emitter.names)}"
+            py_fn_name = f"{PREFIX}{fn.cname(emitter.names)}_{exported_name(module_name)}"
+            name_map[original_py_fn_name] = py_fn_name
+        return name_map
+
     def generate_c_for_modules(self) -> list[tuple[str, str]]:
         file_contents = []
 
@@ -191,9 +202,19 @@ class GroupGenerator:
             self.declare_internal_globals(module_name, emitter)
             self.declare_imports(module.imports, emitter)
 
+            # region tfreezer class mod
+            current_line_index = len(emitter.fragments)
             for cl in module.classes:
                 if cl.is_ext_class:
                     generate_class(cl, module_name, emitter)
+            function_name_map = self.function_name_map(module_name, module, emitter)
+            for i in range(current_line_index, len(emitter.fragments)):
+                line = emitter.fragments[i]
+                for original_name, new_name in function_name_map.items():
+                    if original_name in line:
+                        line = line.replace(original_name, new_name)
+                        emitter.fragments[i] = line
+            # endregion tfreezer class mod
 
             # Generate Python extension module definitions and module initialization functions.
             self.generate_module_def(emitter, module_name, module)
