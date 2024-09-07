@@ -7,7 +7,7 @@ import pathlib
 import typing as _t
 
 from mypyc.codegen import emitmodule
-from mypyc import options, common
+from mypyc import options, common, namegen
 from mypyc.build import include_dir
 
 from tfreezer import paths
@@ -34,27 +34,7 @@ class MyPycSourceGenerator:
         target_dir = self._target_dir
         compiler_options = options.CompilerOptions(multi_file=True, target_dir=target_dir)
         groups, group_cfilenames = build.mypyc_build([module_path], compiler_options)
-        new_group_cfilenames: list[tuple[list[str], list[str]]] = []
-        for (group_sources, _), (cfilenames, deps) in zip(groups, group_cfilenames):
-            print(group_sources, _, cfilenames, deps)
-            # assert len(group_sources) == 1 and len(cfilenames) == 1 and len(deps) == 2
-            # assert group_sources[0].module == module_name
-            # public_header_path = ""
-            # private_header_path = ""
-            # for dep in deps:
-            #     if os.path.basename(dep) == self._public_header_name:
-            #         public_header_path = dep
-            #     elif os.path.basename(dep) == self._private_header_name:
-            #         private_header_path = dep
-            #     else:
-            #         raise ValueError(f"Unknown dependency: {dep}")
-            # public_header_path, private_header_path = self._process_module_headers(module_name, public_header_path, private_header_path)
-            # public_header_name = os.path.basename(public_header_path)
-            # private_header_name = os.path.basename(private_header_path)
-            # source_path = self._process_module_source(module_name, cfilenames[0], public_header_name, private_header_name)
-            # new_group_cfilenames.append(([source_path], [public_header_path, private_header_path]))
-            new_group_cfilenames.append((cfilenames, deps))
-        mypyc_module_info = MyPycModuleInfo(module_name, module_path, groups, new_group_cfilenames)
+        mypyc_module_info = MyPycModuleInfo(module_name, module_path, groups, group_cfilenames)
         self._modules[module_name] = mypyc_module_info
 
     def dump_mypyc_info(self) -> None:
@@ -69,19 +49,16 @@ class MyPycSourceGenerator:
         include_dirs = [mypyc_lib_rt_dir]
         sources = [os.path.join(mypyc_lib_rt_dir, runtime_c).replace("\\", "/") for runtime_c in common.RUNTIME_C_FILES]
         for module_name, module_info in self._modules.items():
-            mypyc_modules_lines.append(f'#include "{module_name}.h"')
+            exported_name = namegen.exported_name(module_name)
+            mypyc_modules_lines.append(f'#include "{exported_name}.h"')
             initialize_macro_lines[-1] += " \\"
-            initialize_macro_lines.append(f'    PyImport_AppendInittab("{module_name}", &PyInit_{module_name});')
+            initialize_macro_lines.append(f'    PyImport_AppendInittab("{module_name}", &PyInit_{exported_name});')
             groups = module_info.groups
             group_cfilenames = module_info.group_cfilenames
             for (group_sources, lib_name), (cfilenames, deps) in zip(groups, group_cfilenames):  # pylint:disable=unused-variable
                 # print(group_sources, lib_name, cfilenames, deps)
                 sources.extend(cfilenames)
                 sources.extend(deps)
-                # for cfilename in cfilenames:
-                #     dirname = os.path.dirname(cfilename)
-                #     if dirname not in include_dirs:
-                #         include_dirs.append(dirname)
         include_dirs = [the_path.replace("\\", "/") for the_path in include_dirs]
         sources = [the_path.replace("\\", "/") for the_path in sources]
         mypyc_include_dirs_path = os.path.join(paths.BUILD_DIR, "mypyc_include_dirs")

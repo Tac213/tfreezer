@@ -1,9 +1,11 @@
 import time
 import fib
 import fib2
+import subpackage
 from subpackage import fib3
 
 if __name__ == "__main__":
+    print(subpackage)
     print(fib)
     print(fib.fib)
     t1 = time.time()

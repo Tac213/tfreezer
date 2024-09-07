@@ -28,4 +28,4 @@ excludes = [
     "unicodedata",
 ]
 
-mypyc_modules = ["fib", "fib2"]
+mypyc_modules = ["fib", "fib2", "subpackage.fib3"]

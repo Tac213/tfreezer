@@ -34,4 +34,10 @@ PYTHON_EXE = r\"${PYTHON_EXECUTABLE}\"
 CMAKE_EXE = r\"\"
 ")
 
+execute_process(
+    COMMAND ${PYTHON_EXECUTABLE} "-c" "from mypyc.build import include_dir;print(include_dir().replace('\\\\', '/'))"
+    OUTPUT_VARIABLE TF_DEV_MYPYC_RT_DIR
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
 add_subdirectory(src/tfreezer/cppsrc)

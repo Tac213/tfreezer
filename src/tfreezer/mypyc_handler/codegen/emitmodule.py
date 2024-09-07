@@ -294,18 +294,18 @@ class GroupGenerator:
         ext_declarations.emit_line("#endif")
         declarations.emit_line("#endif")
 
-        output_dir = group_dir(self.group_name)
+        # output_dir = group_dir(self.group_name)
         return file_contents + [
             (
-                os.path.join(output_dir, f"{self.module_name_no_dot}.c"),
+                f"{self.module_name_no_dot}.c",
                 "".join(emitter.fragments),
             ),
             (
-                os.path.join(output_dir, f"{self.module_name_no_dot}_internal.h"),
+                f"{self.module_name_no_dot}_internal.h",
                 "".join(declarations.fragments),
             ),
             (
-                os.path.join(output_dir, f"{self.module_name_no_dot}.h"),
+                f"{self.module_name_no_dot}.h",
                 "".join(ext_declarations.fragments),
             ),
         ]
@@ -397,7 +397,7 @@ class GroupGenerator:
         )
         emitter.emit_line()
 
-        declaration = f"PyMODINIT_FUNC PyInit_{module_name}(void)"
+        declaration = f"PyMODINIT_FUNC PyInit_{exported_name(module_name)}(void)"
         emitter.emit_lines(declaration, "{")
         emitter.emit_line("PyObject* modname = NULL;")
         # Store the module reference in a static and return it when necessary.

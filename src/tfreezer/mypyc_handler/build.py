@@ -10,6 +10,7 @@ from mypy.build import BuildSource
 from mypy.errors import CompileError
 from mypy.options import Options
 from mypy.fscache import FileSystemCache
+from mypyc.namegen import exported_name
 from mypyc.errors import Errors
 from mypyc.codegen import emitmodule
 from mypyc.options import CompilerOptions
@@ -79,7 +80,10 @@ def mypyc_build(
 
     groups = construct_groups(mypyc_sources, True, True)  # set both `separate` and `use_shared_lib` to `True`
     group_cfiles, ops_text = generate_c(all_sources, options, groups, fscache, compiler_options=compiler_options)
-    write_file(os.path.join(compiler_options.target_dir, "ops.txt"), ops_text)
+    for _, lib_name in groups:
+        if not lib_name:
+            continue
+        write_file(os.path.join(compiler_options.target_dir, f"{exported_name(lib_name)}_ops.txt"), ops_text)
 
     # Write out the generated C and collect the files for each group
     # Should this be here??

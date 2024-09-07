@@ -141,6 +141,13 @@ if(EXISTS ${TF_BUILD_DIR}/mypyc_include_dirs)
     )
 endif()
 
+if(DEFINED TF_DEV_MYPYC_RT_DIR)
+    target_include_directories(${PROJECT_NAME}
+        PRIVATE
+        ${TF_DEV_MYPYC_RT_DIR}
+    )
+endif()
+
 if(NEED_CONSOLE)
     target_compile_definitions(${PROJECT_NAME}
         PRIVATE
