@@ -10,6 +10,7 @@ from mypyc.errors import Errors
 from mypyc.options import CompilerOptions
 from mypyc.namegen import NameGenerator, exported_name
 from mypyc.ir.rtypes import RType
+from mypyc.ir.func_ir import FuncIR
 from mypyc.ir.module_ir import ModuleIR, ModuleIRs
 from mypyc.irbuild.mapper import Mapper
 from mypyc.codegen.emit import Emitter, EmitterContext, HeaderDeclaration, c_array_initializer
@@ -27,11 +28,13 @@ from mypyc.codegen.emitmodule import (
     write_cache,
     collect_literals,
     is_fastcall_supported,
-    generate_function_declaration,
     group_dir,
     c_string_array_initializer,
 )
-from mypyc.common import PREFIX, MODULE_PREFIX, STATIC_PREFIX, TYPE_VAR_PREFIX, TOP_LEVEL_NAME, short_id_from_name
+from mypyc.common import PREFIX, NATIVE_PREFIX, MODULE_PREFIX, STATIC_PREFIX, TYPE_VAR_PREFIX, TOP_LEVEL_NAME, short_id_from_name
+
+from tfreezer.mypyc_handler.codegen.emitfunc import native_function_header
+from tfreezer.mypyc_handler.codegen.emitwrapper import wrapper_function_header, legacy_wrapper_function_header
 
 
 def compile_ir_to_c(
@@ -105,6 +108,21 @@ def compile_modules_to_c(
     write_cache(modules, result, group_map, ctext)
 
     return modules, [ctext[name] for _, name in groups]
+
+
+def generate_function_declaration(fn: FuncIR, emitter: Emitter, module_name: str) -> None:
+    native_fn_name = f"{NATIVE_PREFIX}{fn.cname(emitter.names)}_{exported_name(module_name)}"
+    emitter.context.declarations[native_fn_name] = HeaderDeclaration(
+        f"{native_function_header(fn.decl, emitter, module_name)};", needs_export=True
+    )
+    if fn.name != TOP_LEVEL_NAME:
+        py_fn_name = f"{PREFIX}{fn.cname(emitter.names)}_{exported_name(module_name)}"
+        if is_fastcall_supported(fn, emitter.capi_version):
+            emitter.context.declarations[py_fn_name] = HeaderDeclaration(f"{wrapper_function_header(fn, emitter.names, module_name)};")
+        else:
+            emitter.context.declarations[py_fn_name] = HeaderDeclaration(
+                f"{legacy_wrapper_function_header(fn, emitter.names, module_name)};"
+            )
 
 
 class GroupGenerator:
@@ -194,11 +212,19 @@ class GroupGenerator:
                 for i in range(current_line_index, len(emitter.fragments)):
                     line = emitter.fragments[i]
                     global_var_name = f"{STATIC_PREFIX}globals"
+                    py_fn_name = f"{PREFIX}{fn.cname(emitter.names)}"
+                    native_fn_name = f"{NATIVE_PREFIX}{fn.cname(emitter.names)}"
                     if global_var_name in line:
                         line = line.replace(global_var_name, f"{STATIC_PREFIX}{exported_name(module_name)}_globals")
                         emitter.fragments[i] = line
                     elif "CPyStatics[" in line:
                         line = line.replace("CPyStatics[", f"CPyStatics{self.group_suffix}[")
+                        emitter.fragments[i] = line
+                    elif py_fn_name in line:
+                        line = line.replace(py_fn_name, f"{PREFIX}{fn.cname(emitter.names)}_{exported_name(module_name)}")
+                        emitter.fragments[i] = line
+                    elif native_fn_name in line:
+                        line = line.replace(native_fn_name, f"{NATIVE_PREFIX}{fn.cname(emitter.names)}_{exported_name(module_name)}")
                         emitter.fragments[i] = line
                 # endregion tfreezer modification
 
@@ -232,7 +258,7 @@ class GroupGenerator:
                 generate_class_type_decl(cl, emitter, ext_declarations, declarations)
             self.declare_type_vars(module_name, module.type_var_names, declarations)
             for fn in module.functions:
-                generate_function_declaration(fn, declarations)
+                generate_function_declaration(fn, declarations, module_name)
 
         for lib in sorted(self.context.group_deps):
             elib = exported_name(lib)
@@ -350,8 +376,8 @@ class GroupGenerator:
             else:
                 flag = "METH_VARARGS"
             emitter.emit_line(
-                ('{{"{name}", (PyCFunction){prefix}{cname}, {flag} | METH_KEYWORDS, ' "NULL /* docstring */}},").format(
-                    name=name, cname=fn.cname(emitter.names), prefix=PREFIX, flag=flag
+                ('{{"{name}", (PyCFunction){prefix}{cname}_{suffix}, {flag} | METH_KEYWORDS, ' "NULL /* docstring */}},").format(
+                    name=name, cname=fn.cname(emitter.names), prefix=PREFIX, suffix=exported_name(module_name), flag=flag
                 )
             )
         emitter.emit_line("{NULL, NULL, 0, NULL}")
@@ -414,7 +440,7 @@ class GroupGenerator:
 
         emitter.emit_lines(f"if (CPyGlobalsInit_{exported_name(module_name)}() < 0)", "    goto fail;")
 
-        self.generate_top_level_call(module, emitter)
+        self.generate_top_level_call(module_name, module, emitter)
 
         emitter.emit_lines("Py_DECREF(modname);")
 
@@ -432,13 +458,13 @@ class GroupGenerator:
         emitter.emit_line("return NULL;")
         emitter.emit_line("}")
 
-    def generate_top_level_call(self, module: ModuleIR, emitter: Emitter) -> None:
+    def generate_top_level_call(self, module_name: str, module: ModuleIR, emitter: Emitter) -> None:
         """Generate call to function representing module top level."""
         # Optimization: we tend to put the top level last, so reverse iterate
         for fn in reversed(module.functions):
             if fn.name == TOP_LEVEL_NAME:
                 emitter.emit_lines(
-                    f"char result = {emitter.native_function_name(fn.decl)}();",
+                    f"char result = {emitter.native_function_name(fn.decl)}_{exported_name(module_name)}();",
                     "if (result == 2)",
                     "    goto fail;",
                 )
