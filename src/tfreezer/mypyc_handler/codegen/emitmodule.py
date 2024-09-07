@@ -14,7 +14,7 @@ from mypyc.ir.func_ir import FuncIR
 from mypyc.ir.module_ir import ModuleIR, ModuleIRs
 from mypyc.irbuild.mapper import Mapper
 from mypyc.codegen.emit import Emitter, EmitterContext, HeaderDeclaration, c_array_initializer
-from mypyc.codegen.emitclass import generate_class, generate_class_type_decl
+from mypyc.codegen.emitclass import generate_class
 from mypyc.codegen.emitfunc import generate_native_function
 from mypyc.codegen.emitwrapper import (
     generate_legacy_wrapper_function,
@@ -31,9 +31,19 @@ from mypyc.codegen.emitmodule import (
     group_dir,
     c_string_array_initializer,
 )
-from mypyc.common import PREFIX, NATIVE_PREFIX, MODULE_PREFIX, STATIC_PREFIX, TYPE_VAR_PREFIX, TOP_LEVEL_NAME, short_id_from_name
+from mypyc.common import (
+    PREFIX,
+    NATIVE_PREFIX,
+    MODULE_PREFIX,
+    STATIC_PREFIX,
+    TYPE_PREFIX,
+    TYPE_VAR_PREFIX,
+    TOP_LEVEL_NAME,
+    short_id_from_name,
+)
 
 from tfreezer.mypyc_handler.codegen.emitfunc import native_function_header
+from tfreezer.mypyc_handler.codegen.emitclass import generate_class_type_decl
 from tfreezer.mypyc_handler.codegen.emitwrapper import wrapper_function_header, legacy_wrapper_function_header
 
 
@@ -171,8 +181,20 @@ class GroupGenerator:
     def module_name_no_dot(self) -> str:
         return exported_name(self.group_name)
 
+    def type_name_map(self, module_name: str, module: ModuleIR, emitter: Emitter) -> dict[str, str]:
+        name_map: dict[str, str] = {}
+        for cl in module.classes:
+            original_type_name = f"{TYPE_PREFIX}{cl.name}"
+            type_name = f"{TYPE_PREFIX}{cl.name}_{module_name}"
+            name_map[original_type_name] = type_name
+        return name_map
+
     def function_name_map(self, module_name: str, module: ModuleIR, emitter: Emitter) -> dict[str, str]:
         name_map: dict[str, str] = {}
+        for cl in module.classes:
+            original_native_ctor_name = f"{NATIVE_PREFIX}{cl.ctor.cname(emitter.names)}("
+            native_ctor_name = f"{NATIVE_PREFIX}{cl.ctor.cname(emitter.names)}_{exported_name(module_name)}("
+            name_map[original_native_ctor_name] = native_ctor_name
         for fn in module.functions:
             original_native_fn_name = f"{NATIVE_PREFIX}{fn.cname(emitter.names)}"
             native_fn_name = f"{NATIVE_PREFIX}{fn.cname(emitter.names)}_{exported_name(module_name)}"
@@ -208,20 +230,27 @@ class GroupGenerator:
                 if cl.is_ext_class:
                     generate_class(cl, module_name, emitter)
             function_name_map = self.function_name_map(module_name, module, emitter)
+            type_name_map = self.type_name_map(module_name, module, emitter)
             for i in range(current_line_index, len(emitter.fragments)):
                 line = emitter.fragments[i]
                 for original_name, new_name in function_name_map.items():
                     if original_name in line:
                         line = line.replace(original_name, new_name)
                         emitter.fragments[i] = line
-            # endregion tfreezer class mod
+                        break
+                for original_name, new_name in type_name_map.items():
+                    if original_name in line:
+                        line = line.replace(original_name, new_name)
+                        emitter.fragments[i] = line
+                        break
+            # endregion
 
             # Generate Python extension module definitions and module initialization functions.
             self.generate_module_def(emitter, module_name, module)
 
             for fn in module.functions:
                 emitter.emit_line()
-                # region tfreezer modification
+                # region tfreezer func mod
                 current_line_index = len(emitter.fragments)
                 generate_native_function(fn, emitter, self.source_paths[module_name], module_name)
                 if fn.name != TOP_LEVEL_NAME:
@@ -247,7 +276,12 @@ class GroupGenerator:
                     elif native_fn_name in line:
                         line = line.replace(native_fn_name, f"{NATIVE_PREFIX}{fn.cname(emitter.names)}_{exported_name(module_name)}")
                         emitter.fragments[i] = line
-                # endregion tfreezer modification
+                    for original_name, new_name in type_name_map.items():
+                        if original_name in line:
+                            line = line.replace(original_name, new_name)
+                            emitter.fragments[i] = line
+                            break
+                # endregion
 
         # The external header file contains type declarations while
         # the internal contains declarations of functions and objects
@@ -451,7 +485,7 @@ class GroupGenerator:
         # HACK: Manually instantiate generated classes here
         type_structs: list[str] = []
         for cl in module.classes:
-            type_struct = emitter.type_struct_name(cl)
+            type_struct = f"{TYPE_PREFIX}{cl.name}_{cl.module_name}"
             type_structs.append(type_struct)
             if cl.is_generated:
                 emitter.emit_lines(
