@@ -503,7 +503,7 @@ def assemble_application(assemble_info: AssembleInfo) -> None:
 
     # Get all dependencies of the binaries using PyInstaller's API
     import_packages = sorted(extension_modules)
-    dependencies = build_main.find_binary_dependencies(pyi_binaries, import_packages)
+    dependencies = build_main.find_binary_dependencies(pyi_binaries, import_packages, set())
 
     for data in assemble_info.datas:
         relpath = os.path.relpath(data, paths.APP_ROOT)
