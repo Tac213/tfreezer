@@ -8,3 +8,5 @@ Freeze command:
 # cwd: root of tfreezer
 python -m tfreezer --variant debug --workpath build/mypyc_demo examples/mypyc_demo/freeze_config.py
 ```
+
+NOTE: Currently mypyc doesn't work on free threading build.

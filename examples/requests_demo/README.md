@@ -6,7 +6,7 @@ Freeze command:
 
 ```bash
 # cwd: root of tfreezer
-python -m tfreezer --variant debug --workpath build/requests_demo --entry-module examples/requests_demo/requests_demo.py
+python -m tfreezer --variant debug --workpath build/requests_demo --entry-module examples/requests_demo/requests_demo.py --excludes _testlimitedcapi,_tkinter
 ```
 
 Or:

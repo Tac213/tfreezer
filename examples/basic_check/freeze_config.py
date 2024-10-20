@@ -18,6 +18,7 @@ excludes = [
     "_ssl",
     "_testcapi",
     "_testinternalcapi",
+    "_testlimitedcapi",
     "_tkinter",
     "_wmi",
     "pyexpat",

@@ -7,6 +7,7 @@ Script for generating frozen module headers
 """
 
 import sys
+import sysconfig
 import os
 import re
 import types
@@ -378,6 +379,8 @@ def analyze_module(analysis_info: ModuleAnalysisInfo, module_type: ModuleType) -
         if module.__file__.endswith(tuple(machinery.BYTECODE_SUFFIXES)) and module_type & ModuleType.BYTECODE_MODULE:
             modules[module_name] = module
         if module.__file__.endswith(tuple(machinery.EXTENSION_SUFFIXES)) and module_type & ModuleType.EXTENSION_MODULE:
+            if sysconfig.get_config_var("abi_thread") and not module.__file__.endswith(machinery.EXTENSION_SUFFIXES[0]):
+                module.__file__ = module.__file__.replace(machinery.EXTENSION_SUFFIXES[1], machinery.EXTENSION_SUFFIXES[0])
             modules[module_name] = module
     return modules
 

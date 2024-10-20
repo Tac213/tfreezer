@@ -3,11 +3,18 @@
 # contact: cookiezhx@163.com
 
 import os
-from charset_normalizer import md__mypyc
+
+try:
+    from charset_normalizer import md__mypyc
+except ImportError:
+    md__mypyc = None
 
 hiddenimports = []
-_mdpyc_basename = os.path.basename(md__mypyc.__file__)
-binaries = [
-    (os.path.join("charset_normalizer", _mdpyc_basename), md__mypyc.__file__, "BINARY"),
-]
+if md__mypyc:
+    _mdpyc_basename = os.path.basename(md__mypyc.__file__)
+    binaries = [
+        (os.path.join("charset_normalizer", _mdpyc_basename), md__mypyc.__file__, "BINARY"),
+    ]
+else:
+    binaries = []
 datas = []

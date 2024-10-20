@@ -96,12 +96,13 @@ def python_link_data(is_libpython3: bool) -> PythonLinkData:
         version_no_dots = version.replace(".", "")
 
     lib = ""
+    suffix = sysconfig.get_config_var("abi_thread") or ""
     if sys.platform == "win32":
-        suffix = "_d" if is_debug() else ""
+        suffix = f"{suffix}_d" if is_debug() else suffix
         lib = f"python{version_no_dots}{suffix}"
 
     elif sys.platform == "darwin":
-        lib = f"python{version}"
+        lib = f"python{version}{suffix}"
 
     # Linux and anything else
     else:
@@ -125,7 +126,8 @@ def python_dll_path(is_libpython3: bool) -> str:
     else:
         version = python_version()
         version_no_dots = version.replace(".", "")
-    suffix = "_d" if is_debug() else ""
+    suffix = sysconfig.get_config_var("abi_thread") or ""
+    suffix = f"{suffix}_d" if is_debug() else suffix
     file_name = f"python{version_no_dots}{suffix}.dll"
     file_path = os.path.join(sys.base_exec_prefix, file_name)
     if os.path.isfile(file_path):
