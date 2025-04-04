@@ -5,12 +5,17 @@ set(CMAKE_CXX_STANDARD 20)
 
 option(NEED_CONSOLE "Whether to build a console application." ON)
 option(FREEZE_APPLICATION "Whether to freeze the python application." OFF)
+option(BUILTIN_TFLOADER "Whether to builtin tfloader." OFF)
 
 if(NOT DEFINED PYTHON_EXECUTABLE)
     message(FATAL_ERROR "PYTHON_EXECUTABLE is not set.")
 endif()
 
 add_subdirectory(thirdparty)
+
+if(BUILTIN_TFLOADER)
+    add_subdirectory(tfloader)
+endif()
 
 set(SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp

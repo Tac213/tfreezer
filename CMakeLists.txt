@@ -40,4 +40,5 @@ execute_process(
     OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
+option(BUILTIN_TFLOADER "" ON)
 add_subdirectory(src/tfreezer/cppsrc)
