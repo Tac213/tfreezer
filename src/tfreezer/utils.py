@@ -26,11 +26,11 @@ def iterate_all_modules(source_dir: str) -> _t.Generator[str, None, None]:
 
 
 class LogPipe(threading.Thread):
-    def __init__(self, log_function: _t.Callable[[str], None]) -> None:
+    def __init__(self, log_function: _t.Callable[[str | bytes], None]) -> None:
         super().__init__()
         self.daemon = False
         self.fd_read, self.fd_write = os.pipe()
-        self.pipe_reader = os.fdopen(self.fd_read)
+        self.pipe_reader = os.fdopen(self.fd_read, mode="rb")
         self._log_function = log_function
         self.start()
 
@@ -44,8 +44,14 @@ class LogPipe(threading.Thread):
         """
         Run the thread, logging everything.
         """
-        for line in iter(self.pipe_reader.readline, ""):
-            self._log_function(line.strip("\n"))
+        for line in iter(self.pipe_reader.readline, b""):
+            line_bytes = line.strip()
+            line_str = decode(line_bytes)
+            is_empty_line = not line_bytes
+            if line_str or is_empty_line:
+                self._log_function(line_str)
+            else:
+                self._log_function(line_bytes)
         self.pipe_reader.close()
 
     def close(self) -> None:
@@ -53,6 +59,20 @@ class LogPipe(threading.Thread):
         Close the write end of the pipe.
         """
         os.close(self.fd_write)
+
+
+def decode(bstr: bytes) -> str:
+    ret = ""
+    try:
+        ret = bstr.decode("utf-8")
+    except UnicodeDecodeError:
+        pass
+    if not ret:
+        try:
+            ret = bstr.decode("gbk")
+        except UnicodeDecodeError:
+            pass
+    return ret
 
 
 _log_pipes: list[LogPipe] = []
