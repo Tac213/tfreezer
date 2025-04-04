@@ -8,5 +8,7 @@
 
 namespace tfloader
 {
+using TFPackageInitFunction = _frozen* (*)();
+
 PyMODINIT_FUNC PyInit_tfloader();
-}
+} // namespace tfloader

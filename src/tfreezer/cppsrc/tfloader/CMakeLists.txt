@@ -16,7 +16,13 @@ endif()
 set(_tfloader_sources
     ${CMAKE_CURRENT_SOURCE_DIR}/include/tfloader/tfloader.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tfloader.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/package_loader.h
 )
+if(${WIN32})
+    list(APPEND _tfloader_sources
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/package_loader_win32.cpp
+    )
+endif()
 
 if(TFLOADER_BUILTIN)
     add_library(tfloader STATIC ${_tfloader_sources})
