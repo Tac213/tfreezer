@@ -25,6 +25,20 @@ def iterate_all_modules(source_dir: str) -> _t.Generator[str, None, None]:
             yield module_name
 
 
+def iterate_module_paths(source_dir: str) -> _t.Generator[tuple[str, str, bool], None, None]:
+    validate_suffixes = tuple(machinery.SOURCE_SUFFIXES + machinery.EXTENSION_SUFFIXES)
+    extension_suffixes = tuple(machinery.EXTENSION_SUFFIXES)
+    for root, _, file_names in os.walk(source_dir):
+        for file_name in file_names:
+            if not file_name.endswith(validate_suffixes):
+                continue
+            file_path = os.path.normpath(os.path.abspath(os.path.join(root, file_name)))
+            module_name = os.path.splitext(os.path.relpath(file_path, os.path.dirname(source_dir)))[0].replace(os.path.sep, ".")
+            if module_name.endswith("__init__"):
+                module_name = module_name.rpartition(".")[0]
+            yield module_name, file_path, file_path.endswith(extension_suffixes)
+
+
 class LogPipe(threading.Thread):
     def __init__(self, log_function: _t.Callable[[str | bytes], None]) -> None:
         super().__init__()
@@ -105,7 +119,7 @@ def call_subprocess(args: list[str], *, cwd: str) -> int:
     return p.returncode
 
 
-def load_signle_module(name: str, path: str) -> types.MethodType:
+def load_signle_module(name: str, path: str) -> types.ModuleType:
     loader = machinery.SourceFileLoader(name, path)
     spec = util.spec_from_file_location(name, path, loader=loader)
     module = util.module_from_spec(spec)
