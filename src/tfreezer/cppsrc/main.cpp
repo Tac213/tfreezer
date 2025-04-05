@@ -20,6 +20,10 @@
 #    include "mypyc_modules/tfreezer_mypyc_modules.h"
 #endif
 
+#if defined(BUILTIN_TFLOADER)
+#    include "tfloader/tfloader.h"
+#endif
+
 #define STR_HELPER(x) #x
 #define STR(x)        STR_HELPER(x)
 
@@ -312,6 +316,9 @@ WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nShowCmd) // 
 #endif
 #if defined(USING_MYPYC_MODULES)
     INITIALIZE_MYPYC_MODULES
+#endif
+#if defined(BUILTIN_TFLOADER)
+    PyImport_AppendInittab("tfloader", &tfloader::PyInit_tfloader);
 #endif
 #if defined(FREEZE_APPLICATION)
     PyImport_FrozenModules = _PyImport_FrozenModules;

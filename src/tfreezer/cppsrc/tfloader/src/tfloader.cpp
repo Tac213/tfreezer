@@ -340,7 +340,7 @@ static PyMethodDef tfloader_methods[] = {
     {"load_tfpackage", static_cast<PyCFunction>(load_tfpackage), METH_VARARGS, g_doc_load_tfpackage},
     {"is_tfpackage_frozen", static_cast<PyCFunction>(is_tfpackage_frozen), METH_O, g_doc_is_tfpackage_frozen},
     {"is_tfpackage_frozen_package", static_cast<PyCFunction>(is_tfpackage_frozen_package), METH_O, g_doc_is_tfpackage_frozen_package},
-    {"get_tfpackage_frozen_object", _PyCFunction_CAST(get_tfpackage_frozen_object), METH_O, g_doc_get_tfpackage_frozen_object},
+    {"get_tfpackage_frozen_object", static_cast<PyCFunction>(get_tfpackage_frozen_object), METH_O, g_doc_get_tfpackage_frozen_object},
     {"find_tfpackage_frozen", static_cast<PyCFunction>(find_tfpackage_frozen), METH_O, g_doc_find_tfpackage_frozen},
     {nullptr, nullptr},
 };

@@ -23,6 +23,7 @@ class _ArgumentNamespace(argparse.Namespace):
     hidden_imports: _t.Optional[list[str]]
     excludes: _t.Optional[list[str]]
     mypyc_modules: _t.Optional[list[str]]
+    builtin_tfloader: bool
     config_file: _t.Optional[str]
 
 
@@ -39,6 +40,7 @@ def get_argument_parser() -> argparse.ArgumentParser:
     parser.add_argument("--hidden-imports", type=str, nargs="+")
     parser.add_argument("--excludes", type=str, nargs="+")
     parser.add_argument("--mypyc-modules", type=str, nargs="+")
+    parser.add_argument("--builtin-tfloader", action="store_true")
     parser.add_argument("config_file", type=str, nargs="?")
     return parser
 
@@ -106,6 +108,7 @@ def _cmake_configure(args: _ArgumentNamespace) -> None:
         "Visual Studio 17 2022",
         f"-DNEED_CONSOLE={'ON' if debug else 'OFF'}",
         "-DFREEZE_APPLICATION=ON",
+        f"-DBUILTIN_TFLOADER={'ON' if args.builtin_tfloader else 'OFF'}",
         f"-DPYTHON_EXECUTABLE={python_exe}",
         f"-DTF_APPROOT_DIR={app_root}",
         f"-DTF_BUILD_DIR={build_dir}",

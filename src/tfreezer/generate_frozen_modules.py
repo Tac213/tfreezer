@@ -21,11 +21,11 @@ import subprocess
 import shutil
 import multiprocessing
 
-if os.environ.get("DEBUG"):
-    import debugpy
-
 from tfreezer import paths, log, utils, config, freeze_module, mypyc_source_generator
 from tfreezer.hooks import analysis_hooks
+
+if os.environ.get("DEBUG"):
+    import debugpy
 
 # See: ${CPYTHON_SRC}/Python/frozen.c
 OFFICIAL_FROZEN_MODULE_NAMES = (
@@ -86,6 +86,7 @@ class ModuleAnalysisInfo:
     hidden_imports: list[str]  # hidden import module names
     excludes: list[str]  # exclude module names
     mypyc_module_names: list[str]  # modules that are needed to be compiled to c using mypyc
+    builtin_tfloader: bool = False  # Whether to make tfloader a builtin module
 
 
 class ModuleType(enum.IntFlag):
@@ -361,6 +362,12 @@ def analyze_module(analysis_info: ModuleAnalysisInfo, module_type: ModuleType) -
     tf_pywin32 = modulefinder.Module("tf_pywin32", os.path.join(os.path.dirname(__file__), "bootstrap", "tf_pywin32.py"))
     finder.modules[tf_pywin32.__name__] = tf_pywin32
 
+    if analysis_info.builtin_tfloader:
+        tfloader_importer_path = os.path.join(paths.TFLOADER_SRC, "src", "tfloader_importer", "__init__.py")
+        tfloader_importer = modulefinder.Module("tfloader_importer", tfloader_importer_path, [os.path.dirname(tfloader_importer_path)])
+        finder.modules[tfloader_importer.__name__] = tfloader_importer
+        finder.excludes.append("tfloader")
+
     for hidden_import_name in hidden_imports:
         finder.import_hook(hidden_import_name)
 
@@ -447,14 +454,17 @@ def _load_frozen_module_info() -> dict[str, str]:
     return module.FROZEN_MODULES
 
 
-def print_frozen_header_file_names(entry_module_name: str, hidden_imports_arg: str, excludes_arg: str, mypyc_modules_arg: str) -> None:
+def print_frozen_header_file_names(
+    entry_module_name: str, hidden_imports_arg: str, excludes_arg: str, mypyc_modules_arg: str, builtin_tfloader_arg: str
+) -> None:
     """
     Print all frozen header file names for cmake
     Args:
         entry_module: A python module name or a single python_file
         hidden_imports_arg: hidden import modules, e.g. --hidden-imports=xx,yy,aa.bb
         excludes_arg: excludes modules, e.g. --excludes=test,unittest
-        mypyc_modules_arg: excludes modules, e.g. --mypyc-modules-=mylib1,mylib1.performance_sensitive
+        mypyc_modules_arg: mypyc modules, e.g. --mypyc-modules=mylib1,mylib1.performance_sensitive
+        builtin_tfloader_arg: builtin tfloader, e.g. --builtin-tfloader=ON
     Returns:
         None
     """
@@ -476,7 +486,8 @@ def print_frozen_header_file_names(entry_module_name: str, hidden_imports_arg: s
     hidden_imports = get_list_arg(hidden_imports_arg, "--hidden-imports")
     excludes = get_list_arg(excludes_arg, "--excludes")
     mypyc_modules = get_list_arg(mypyc_modules_arg, "--mypyc-modules")
-    analysis_info = ModuleAnalysisInfo(entry_module_name, hidden_imports, excludes, mypyc_modules)
+    builtin_tfloader = builtin_tfloader_arg.partition("=")[-1] == "ON"
+    analysis_info = ModuleAnalysisInfo(entry_module_name, hidden_imports, excludes, mypyc_modules, builtin_tfloader)
     module_info = {}
     mypyc_module_info = {}
     module_names = get_frozen_module_names(analysis_info, info=module_info, mypyc_module_info=mypyc_module_info)

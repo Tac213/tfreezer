@@ -25,10 +25,10 @@ from PyInstaller.building import build_main
 from PyInstaller.utils import misc
 from PyInstaller.utils.hooks import qt
 
+from tfreezer import generate_frozen_modules, log, utils, paths, config
+
 if os.environ.get("DEBUG"):
     import debugpy
-
-from tfreezer import generate_frozen_modules, log, utils, paths, config
 
 
 @dataclasses.dataclass
@@ -48,6 +48,7 @@ class AssembleInfo:
     qt_quick_control_styles: list[str]  # list all needed QtQuick.Control stypes
     ignore_platform_dynload = False
     static_python = False
+    builtin_tfloader = False
 
 
 @dataclasses.dataclass
@@ -459,7 +460,11 @@ def assemble_application(assemble_info: AssembleInfo) -> None:
 
     # Analyze which modules are used to run the application
     analysis_info = generate_frozen_modules.ModuleAnalysisInfo(
-        assemble_info.entry_module_name, assemble_info.hidden_imports, assemble_info.excludes, []
+        assemble_info.entry_module_name,
+        assemble_info.hidden_imports,
+        assemble_info.excludes,
+        [],
+        assemble_info.builtin_tfloader,
     )
     modules = generate_frozen_modules.analyze_module(
         analysis_info, generate_frozen_modules.ModuleType.EXTENSION_MODULE | generate_frozen_modules.ModuleType.SOURCE_MODULE
@@ -581,6 +586,8 @@ def main() -> None:
         elif arg.startswith("--qml-directory"):
             datas = generate_frozen_modules.get_list_arg(arg, "--qml-directory")
             assemble_info.qml_directory = datas[0]
+        elif arg.startswith("--builtin-tfloader"):
+            assemble_info.builtin_tfloader = arg.partition("=")[-1] == "ON"
         else:
             if os.path.isfile(arg):
                 with open(arg, "r", encoding="utf-8") as fp:

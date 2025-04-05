@@ -9,6 +9,14 @@ import tf_importer
 # Install tf frozen importer
 tf_importer.install()
 
+# Install tfpackage frozen improter
+try:
+    import tfloader_importer
+
+    tfloader_importer.install()
+except ImportError:
+    pass
+
 # Let other python modules know that the code is running in frozen mode.
 if not hasattr(sys, "frozen"):
     sys.frozen = True

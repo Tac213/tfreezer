@@ -14,6 +14,7 @@ APP_ROOT = ""
 BUILD_DIR = ""
 DEPLOY_DIR = ""
 CPP_SRC = str(resources.files("tfreezer").joinpath("cppsrc"))
+TFLOADER_SRC = str(resources.files("tfreezer").joinpath("cppsrc", "tfloader"))
 
 GENERATED_HEADERS_DIR = ""  # Will be added to `target_include_directories` in cmake
 FROZEN_MODULE_DIR = ""  # ${GENERATED_HEADERS_DIR}/frozen_modules

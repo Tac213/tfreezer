@@ -156,6 +156,8 @@ setup(
     author_email="cookiezhx@163.com",
     description="A package to load extension frozen packages frozen by tfreezer.",
     long_description="",
+    packages=["tfloader_importer"],
+    package_dir={"": "src"},
     ext_modules=[CMakeExtension("tfloader")],
     cmdclass={"build_ext": CMakeBuild},
     zip_safe=False,

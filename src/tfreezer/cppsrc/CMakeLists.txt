@@ -14,6 +14,7 @@ endif()
 add_subdirectory(thirdparty)
 
 if(BUILTIN_TFLOADER)
+    option(TFLOADER_BUILTIN "" ON)
     add_subdirectory(tfloader)
 endif()
 
@@ -66,7 +67,7 @@ if(FREEZE_APPLICATION)
     execute_process(
         COMMAND ${PYTHON_EXECUTABLE} "-m" "tfreezer.generate_frozen_modules" "--get-frozen-header-file-names"
         "${TF_BUILD_DIR}"
-        "${ENTRY_MODULE_NAME}" "--hidden-imports=${HIDDEN_IMPORTS}" "--excludes=${EXCLUDES}" "--mypyc-modules=${MYPYC_MODULES}"
+        "${ENTRY_MODULE_NAME}" "--hidden-imports=${HIDDEN_IMPORTS}" "--excludes=${EXCLUDES}" "--mypyc-modules=${MYPYC_MODULES}" "--builtin-tfloader=${BUILTIN_TFLOADER}"
         RESULT_VARIABLE _resullt
         WORKING_DIRECTORY ${TF_APPROOT_DIR}
     )
@@ -167,6 +168,17 @@ if(FREEZE_APPLICATION)
     )
 endif()
 
+if(BUILTIN_TFLOADER)
+    target_compile_definitions(${PROJECT_NAME}
+        PRIVATE
+        BUILTIN_TFLOADER
+    )
+    target_link_libraries(${PROJECT_NAME}
+        PRIVATE
+        tfloader
+    )
+endif()
+
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
     cpython::libpython
@@ -210,7 +222,7 @@ if(${WIN32})
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
             COMMAND ${PYTHON_EXECUTABLE} "-m" "tfreezer.assemble_application" "${TF_BUILD_DIR}"
             "${ENTRY_MODULE_NAME}" "--hidden-imports=${HIDDEN_IMPORTS}" "--excludes=${EXCLUDES}" "--binaries=$<TARGET_FILE:${PROJECT_NAME}>,$<TARGET_FILE:cpython::libpython3>"
-            "--datas=${DATAS}"
+            "--datas=${DATAS}" "--builtin-tfloader=${BUILTIN_TFLOADER}"
             COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:cpython::libpython3> ${TF_DEPLOY_DIR}
             WORKING_DIRECTORY ${TF_APPROOT_DIR}
         )
