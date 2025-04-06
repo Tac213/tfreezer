@@ -25,6 +25,7 @@ dev = [
     "requests",
     "pywin32",
     "pyqt5",
+    "pyside6",
 ]
 
 [project.urls]
