@@ -327,8 +327,7 @@ PyDoc_STRVAR(g_doc_tfloader,
 static int
 module_exec(PyObject* module)
 {
-    PyObject* version = PyUnicode_FromString(TFLOADER_VERSION);
-    if (PyModule_Add(module, "__version__", version) < 0)
+    if (PyModule_AddStringConstant(module, "__version__", TFLOADER_VERSION) < 0)
     {
         return -1;
     }

@@ -19,9 +19,9 @@ try:
     from importlib import machinery
 except ImportError:
     machinery = None
-try:
-    import imp  # type: ignore  # pylint: disable=deprecated-module
-except ImportError:
+if sys.version_info.major == 2:
+    import imp  # type: ignore  # pylint: disable=deprecated-module, import-error
+else:
     imp = None
 
 
